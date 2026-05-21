@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pikmin 嘉義 8 點挑戰攻略</title>
+  
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 引入 Leaflet 地圖 CSS 與 JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- 引入 Lucide 圖示集 -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* 自訂淡入動畫 */
+    .fade-in {
+      animation: fadeIn 0.4s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* 地圖標記動畫特效 */
+    .marker-highlight {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    /* Material 風格陰影調整 */
+    .md-shadow {
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+    }
+    .md-shadow-hover:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 font-sans text-gray-800 pb-12">
+
+  <!-- App Bar (Material Header) -->
+  <header class="bg-teal-600 text-white shadow-md relative z-10">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <i data-lucide="map" class="w-7 h-7 text-teal-100"></i>
+        <h1 class="text-xl font-medium tracking-wide">嘉義 8 點挑戰攻略</h1>
+      </div>
+      <p class="text-teal-50 text-sm font-medium tracking-wide bg-teal-700/50 px-3 py-1 rounded-full">5/23 開車分區＋步行特化版</p>
+    </div>
+  </header>
+
+  <!-- Material Tabs -->
+  <div class="bg-white shadow-sm mb-6 sticky top-0 z-20">
+    <div class="max-w-5xl mx-auto px-4 flex">
+      <button onclick="switchTab('map')" id="btn-tab-map" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors">
+        <i data-lucide="map-pin" class="w-5 h-5"></i>
+        地圖與停車資訊
+      </button>
+      <button onclick="switchTab('route')" id="btn-tab-route" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors">
+        <i data-lucide="navigation-2" class="w-5 h-5"></i>
+        行程路線規劃
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-4">
+    
+    <!-- TAB 1: Map & Parking -->
+    <div id="tab-map" class="space-y-6 fade-in block">
+      
+      <!-- Interactive Map Container (Material Card) -->
+      <div class="bg-white rounded-lg md-shadow relative group overflow-hidden">
+        <div id="map-container" class="h-[450px] w-full bg-gray-100 relative z-0">
+          <!-- 地圖將由 Leaflet 自動載入至此 -->
+        </div>
+        
+        <!-- Map Legend -->
+        <div class="absolute bottom-6 left-6 z-[1000]">
+           <div class="bg-white px-3 py-2 rounded-md md-shadow flex gap-4 text-xs font-medium text-gray-700">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span> 任務景點</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span> 停車場</span>
+           </div>
+        </div>
+        
+        <!-- Extended FAB (Floating Action Button) -->
+        <div class="absolute bottom-6 right-6 z-[1000]">
+          <a id="external-map-link" href="#" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-full shadow-lg font-medium transition-transform transform hover:-translate-y-0.5 tracking-wide text-sm">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            開啟導航
+          </a>
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="pt-2 pb-1">
+        <h2 class="text-lg font-medium text-gray-800 flex items-center gap-2">
+          <i data-lucide="circle-parking" class="text-teal-600 w-5 h-5"></i>
+          八大景點停車攻略
+        </h2>
+        <p class="text-gray-500 mt-1 text-sm">地圖顯示所有點位。點擊清單或地圖圖標，選中的區域將被突顯放大。</p>
+      </div>
+
+      <!-- Locations Grid (Dynamically rendered by JS) -->
+      <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-8"></div>
+    </div>
+
+    <!-- TAB 2: Route Planning -->
+    <div id="tab-route" class="fade-in hidden pb-8">
+      
+      <div class="bg-white rounded-lg md-shadow p-6 md:p-8 mb-6">
+        <h2 class="text-xl font-medium text-gray-800 mb-2">5/23 開車最佳路線</h2>
+        <p class="text-gray-500 text-sm">結合三個大型停車場，將 8 個點拆分為 3 個步行區域，減少在市區開車找車位的痛苦。</p>
+      </div>
+
+      <div id="route-grid" class="relative border-l-2 border-gray-200 ml-4 md:ml-6 space-y-6">
+        <!-- Routes dynamically rendered by JS -->
+      </div>
+
+      <div class="mt-8 bg-orange-50 p-5 rounded-lg flex gap-3 items-start border border-orange-100">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-orange-600 shrink-0 mt-0.5"></i>
+        <div class="text-sm text-orange-800">
+          <p class="font-medium mb-1">給 Pikmin 玩家的小叮嚀：</p>
+          <p class="leading-relaxed">這三段的步行距離都在綠林或人行商圈中，非常適合一路種花、解任務。記得隨時補充水分，並留意週末車潮，祝您順利取得金色花苗！</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // --- 內部資料區 ---
+    const locationsData = [
+      {
+        id: 'A', name: '嘉義文化創意產業園區', zone: 'Zone 1 (火車站前)', coords: [23.4770, 120.4400], query: '嘉義文化創意產業園區',
+        parkings: [
+          { name: '文創停車場', type: '推薦', space: '中等', desc: '就在園區旁，早上去較有位子。', query: '嘉義市西區中山路616號 文創停車場', coords: [23.4774, 120.4404] },
+          { name: '城市車旅 蘭井站', type: '備選', space: '偏少', desc: '若主要客滿可停，小型平面。', query: '嘉義市西區蘭井街372號 城市車旅', coords: [23.4777, 120.4420] },
+          { name: '168parking 蘭井街', type: '備選', space: '偏少', desc: '距離近的替代小型停車場。', query: '嘉義市西區蘭井街475號 168parking', coords: [23.4775, 120.4410] }
+        ]
+      },
+      {
+        id: 'B', name: '嘉義市立美術館', zone: 'Zone 1 (火車站前)', coords: [23.4768, 120.4407], query: '嘉義市立美術館',
+        parkings: [
+          { name: '文創停車場', type: '推薦', space: '中等', desc: '過個馬路就到美術館，最為方便。', query: '嘉義市西區中山路616號 文創停車場', coords: [23.4774, 120.4404] },
+          { name: '嘉義火車站前停車場', type: '備選', space: '中等', desc: '車站前站收費停車，人潮較多。', query: '嘉義車站前停車場', coords: [23.4785, 120.4410] },
+          { name: '嘉義里亞站停車場', type: '備選', space: '偏少', desc: '永和街上，步行約 3 分鐘。', query: '嘉義市永和街100號 停車場', coords: [23.4760, 120.4385] }
+        ]
+      },
+      {
+        id: 'C', name: '嘉義文化公園', zone: 'Zone 2 (文化路商圈)', coords: [23.4750, 120.4503], query: '嘉義市文化公園',
+        parkings: [
+          { name: '嘉義市文化公園停車場', type: '推薦', space: '極多', desc: '大型地下停車場，直接在公園正下方。', query: '嘉義市文化公園停車場', coords: [23.4752, 120.4500] },
+          { name: '俥亭嘉義垂楊停車場', type: '備選', space: '中等', desc: '垂楊路平面停車場，不想排地下室的首選。', query: '嘉義市垂楊路455號 俥亭停車', coords: [23.4745, 120.4470] },
+          { name: '垂楊國小地下停車場', type: '備選', space: '多', desc: '車位充足，步行至公園約 5-8 分鐘。', query: '嘉義市垂楊國小地下停車場', coords: [23.4735, 120.4435] }
+        ]
+      },
+      {
+        id: 'D', name: '中央第一商場', zone: 'Zone 2 (文化路商圈)', coords: [23.4794, 120.4491], query: '嘉義市中央第一商場',
+        parkings: [
+          { name: '嘉義市文化公園停車場', type: '推薦', space: '極多', desc: '從商場走回公園取車最順路。', query: '嘉義市文化公園停車場', coords: [23.4752, 120.4500] },
+          { name: '西市場大樓地下停車場', type: '備選', space: '中等', desc: '距離商場非常近，但巷弄較狹窄。', query: '嘉義市西市場大樓地下停車場', coords: [23.4785, 120.4475] },
+          { name: 'CITY PARKING 垂楊二站', type: '備選', space: '偏少', desc: '垂楊路上的小型停車空間。', query: '嘉義市垂楊路908號 城市車旅', coords: [23.4745, 120.4400] }
+        ]
+      },
+      {
+        id: 'E', name: '嘉義文學館 (東門町1923)', zone: 'Zone 3 (嘉義公園藝文區)', coords: [23.4803, 120.4555], query: '嘉義市公明路236號 嘉義文學館',
+        parkings: [
+          { name: '嘉義市立棒球場停車場', type: '推薦', space: '極多', desc: '強烈建議停此處，車位極多且免費/便宜。', query: '嘉義市立棒球場停車場', coords: [23.4818, 120.4642] },
+          { name: '嘉義市政府南棟停車場', type: '備選', space: '多', desc: '若不想走太遠，這離文學館較近。', query: '嘉義市政府南棟停車場', coords: [23.4820, 120.4545] },
+          { name: '嘟嘟房 嘉義東門站', type: '備選', space: '少', desc: '公明路周邊小型停車場。', query: '嘟嘟房 嘉義東門站', coords: [23.4800, 120.4560] }
+        ]
+      },
+      {
+        id: 'F', name: '嘉義市立博物館', zone: 'Zone 3 (嘉義公園藝文區)', coords: [23.4872, 120.4517], query: '嘉義市立博物館',
+        parkings: [
+          { name: '嘉義市立棒球場停車場', type: '推薦', space: '極多', desc: '佔地廣大，不怕週末沒位子。', query: '嘉義市立棒球場停車場', coords: [23.4818, 120.4642] },
+          { name: '城市車旅 嘉義博物館站', type: '備選', space: '少', desc: '館下 B1 停車場，週末極易客滿。', query: '嘉義市立博物館附設地下停車場', coords: [23.4873, 120.4517] },
+          { name: '文化中心旁平面停車場', type: '備選', space: '中等', desc: '鄰近阿里山林業村，需稍微步行。', query: '嘉義市文化局 停車場', coords: [23.4865, 120.4510] }
+        ]
+      },
+      {
+        id: 'G', name: '嘉義實驗木場', zone: 'Zone 3 (嘉義公園藝文區)', coords: [23.4851, 120.4591], query: '嘉義市維新路134巷24號 實驗木場',
+        parkings: [
+          { name: '嘉義市立棒球場停車場', type: '推薦', space: '極多', desc: '綠樹成蔭，散步走過來很舒服。', query: '嘉義市立棒球場停車場', coords: [23.4818, 120.4642] },
+          { name: '嘉義舊監獄周邊停車格', type: '備選', space: '少', desc: '維新路沿線的路邊停車格。', query: '嘉義舊監獄', coords: [23.4855, 120.4580] },
+          { name: '城市車旅 嘉義博物館站', type: '備選', space: '少', desc: '若剛好有位置可停。', query: '嘉義市立博物館附設地下停車場', coords: [23.4873, 120.4517] }
+        ]
+      },
+      {
+        id: 'H', name: '嘉義市立棒球場 (KANO)', zone: 'Zone 3 (嘉義公園藝文區)', coords: [23.4818, 120.4658], query: '嘉義市立棒球場',
+        parkings: [
+          { name: '嘉義市立棒球場停車場', type: '推薦', space: '極多', desc: '直接停在目的地，腹地最大！', query: '嘉義市立棒球場停車場', coords: [23.4818, 120.4642] },
+          { name: '嘉義棒球場大型車停車場', type: '備選', space: '多', desc: '旁邊的備用廣大停車區。', query: '嘉義棒球場大型車停車場', coords: [23.4825, 120.4665] },
+          { name: '俥亭棒球場停車場 uTagGo', type: '備選', space: '中等', desc: '另一側的電子收費停車區。', query: '嘉義市啟明路 俥亭棒球場停車場', coords: [23.4810, 120.4650] }
+        ]
+      }
+    ];
+
+    const routeSteps = [
+      {
+        type: 'drive', title: '開車抵達 Zone 1', desc: '建議早上先至火車站周邊，避開午後人潮。導航至下方停車場：', sequence: '第 1 站',
+        parkings: [
+          { name: '文創停車場', type: '推薦', query: '嘉義市西區中山路616號 文創停車場' },
+          { name: '城市車旅 蘭井站', type: '備選', query: '嘉義市西區蘭井街372號 城市車旅' },
+          { name: '168parking 蘭井街', type: '備選', query: '嘉義市西區蘭井街475號 168parking' }
+        ]
+      },
+      { type: 'walk', title: '步行解鎖 A、B', desc: '在停車場旁打卡【A 嘉義文化創意產業園區】，接著步行過馬路打卡【B 嘉義市立美術館】。', sequence: '第 2 站' },
+      {
+        type: 'drive', title: '開車前往 Zone 2', desc: '沿著民族路或垂楊路行駛，導航並停入下方停車場：', sequence: '第 3 站',
+        parkings: [
+          { name: '嘉義市文化公園停車場', type: '推薦', query: '嘉義市文化公園停車場' },
+          { name: '俥亭嘉義垂楊停車場', type: '備選', query: '嘉義市垂楊路455號 俥亭停車' },
+          { name: '垂楊國小地下停車場', type: '備選', query: '嘉義市垂楊國小地下停車場' }
+        ]
+      },
+      { type: 'walk', title: '步行解鎖 C、D', desc: '停好車上樓打卡【C 嘉義文化公園】，順著熱鬧的文化路商圈往北走約 500 公尺打卡【D 中央第一商場】，再原路折返。', sequence: '第 4 站' },
+      {
+        type: 'drive', title: '開車前往 Zone 3', desc: '沿著垂楊路與啟明路。這裡腹地極大，週末也不怕沒車位：', sequence: '第 5 站',
+        parkings: [
+          { name: '嘉義市立棒球場停車場', type: '推薦', query: '嘉義市立棒球場停車場' },
+          { name: '嘉義市政府南棟停車場', type: '備選', query: '嘉義市政府南棟停車場' },
+          { name: '嘟嘟房 嘉義東門站', type: '備選', query: '嘟嘟房 嘉義東門站' }
+        ]
+      },
+      { type: 'walk', title: '公園散步解鎖 H、G、F、E', desc: '下車即是【H 棒球場】；沿著公園綠地往西北走至【G 實驗木場】；接著到旁邊的【F 博物館】；最後走進市區打卡【E 嘉義文學館】。', sequence: '第 6 站' },
+      { type: 'finish', title: '完成挑戰！', desc: '完美避開市區塞車，利用三個停車場搭配雙腳，順利獲得金色花苗與徽章！', sequence: '終點' }
+    ];
+
+    // --- 狀態管理 ---
+    let activeLocId = 'A';
+    let activeMapQuery = locationsData[0].query;
+    
+    // 地圖變數
+    let mapInstance = null;
+    let allMarkersData = []; // 儲存所有的 marker 參考以供動態更新
+    let markersDict = {};
+
+    // --- 介面切換 (Tabs) ---
+    function switchTab(tabId) {
+      document.getElementById('tab-map').classList.toggle('hidden', tabId !== 'map');
+      document.getElementById('tab-map').classList.toggle('block', tabId === 'map');
+      
+      document.getElementById('tab-route').classList.toggle('hidden', tabId !== 'route');
+      document.getElementById('tab-route').classList.toggle('block', tabId === 'route');
+
+      const btnMap = document.getElementById('btn-tab-map');
+      const btnRoute = document.getElementById('btn-tab-route');
+      
+      if (tabId === 'map') {
+        btnMap.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors";
+        btnRoute.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors";
+        if (mapInstance) {
+          setTimeout(() => mapInstance.invalidateSize(), 100);
+        }
+      } else {
+        btnMap.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors";
+        btnRoute.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors";
+      }
+    }
+
+    // --- 設定作用中的地點與停車場 ---
+    function setActiveState(locId, query, fromMap = false) {
+      if(window.event && !fromMap) window.event.stopPropagation();
+      
+      activeLocId = locId;
+      activeMapQuery = query;
+      
+      document.getElementById('external-map-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeMapQuery)}`;
+      
+      renderLocations();
+      updateMapFeatures();
+      
+      // 如果不是從地圖點擊觸發的，我們需要讓地圖自動飛過去並開啟 Popup
+      if (!fromMap) {
+        setTimeout(() => {
+          const targetMarker = markersDict[activeMapQuery];
+          if (targetMarker) {
+            targetMarker.openPopup();
+            mapInstance.setView(targetMarker.getLatLng(), 16, { animate: true });
+          }
+        }, 100);
+      } else {
+         // 從地圖點擊的，Leaflet 已經自己打開 Popup 了，我們只要稍微平移置中就好
+         const targetMarker = markersDict[activeMapQuery];
+         if (targetMarker) {
+            mapInstance.panTo(targetMarker.getLatLng());
+         }
+      }
+    }
+
+    // --- 渲染第一頁：停車地點清單 ---
+    function renderLocations() {
+      const container = document.getElementById('locations-grid');
+      let html = '';
+
+      locationsData.forEach(loc => {
+        const isActive = activeLocId === loc.id;
+        const isLocQueryActive = isActive && activeMapQuery === loc.query;
+        
+        let parkingsHtml = '';
+        loc.parkings.forEach((park, pIdx) => {
+          const isParkActive = activeMapQuery === park.query;
+          const spaceColor = (park.space === '極多' || park.space === '多') ? 'text-green-700' : (park.space === '中等' ? 'text-blue-700' : 'text-red-600');
+          const typeBadge = park.type === '推薦' 
+            ? `<span class="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200 uppercase tracking-wide">Top 1</span>` 
+            : `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200">備選 ${pIdx}</span>`;
+
+          parkingsHtml += `
+            <div onclick="setActiveState('${loc.id}', '${park.query.replace(/'/g, "\\'")}')" class="flex gap-3 text-sm py-2 px-3 mt-1 rounded-md cursor-pointer transition-colors ${isParkActive ? 'bg-blue-50/60' : 'hover:bg-gray-50'}">
+              <div class="min-w-[50px] pt-0.5">${typeBadge}</div>
+              <div class="flex-1">
+                <div class="font-medium flex items-center gap-1.5 ${isParkActive ? 'text-blue-700' : 'text-gray-700'}">
+                  <i data-lucide="circle-parking" class="w-4 h-4 shrink-0 ${isParkActive ? 'text-blue-600' : 'text-gray-400'}"></i>
+                  ${park.name}
+                  <span class="text-[10px] px-1.5 font-medium ${spaceColor}">車位${park.space}</span>
+                </div>
+                <div class="mt-0.5 text-xs ${isParkActive ? 'text-blue-600/80' : 'text-gray-500'}">${park.desc}</div>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+          <div class="bg-white rounded-lg transition-all duration-300 ${isActive ? 'shadow-md border border-teal-500' : 'shadow-sm border border-gray-200 hover:shadow-md'} overflow-hidden">
+            <div onclick="setActiveState('${loc.id}', '${loc.query.replace(/'/g, "\\'")}')" class="flex items-start justify-between p-4 cursor-pointer transition-colors ${isLocQueryActive ? 'bg-teal-50/50' : 'hover:bg-gray-50'}">
+              <div class="flex items-center gap-3">
+                <span class="flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium shrink-0 transition-colors ${isActive ? 'bg-teal-600 text-white' : 'bg-teal-100 text-teal-700'}">${loc.id}</span>
+                <h3 class="text-base font-medium flex items-center gap-1.5 transition-colors ${isActive ? 'text-teal-800' : 'text-gray-800'}">
+                  <i data-lucide="flag" class="w-4 h-4 shrink-0 ${isLocQueryActive ? 'text-red-500' : 'text-gray-400'}"></i>
+                  ${loc.name}
+                </h3>
+              </div>
+              <span class="text-[11px] font-medium text-gray-500 shrink-0 uppercase tracking-wide">${loc.zone}</span>
+            </div>
+            <div class="px-2 pb-3 border-t border-gray-100">${parkingsHtml}</div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // --- 渲染第二頁：路線規劃 ---
+    function renderRoutes() {
+      const container = document.getElementById('route-grid');
+      let html = '';
+
+      routeSteps.forEach(step => {
+        let iconBg = step.type === 'drive' ? 'bg-blue-600' : (step.type === 'walk' ? 'bg-teal-600' : 'bg-orange-500');
+        let iconName = step.type === 'drive' ? 'car' : (step.type === 'walk' ? 'footprints' : 'check-circle');
+        let titleColor = step.type === 'drive' ? 'text-blue-700' : (step.type === 'walk' ? 'text-teal-700' : 'text-orange-700');
+
+        let parkingsHtml = '';
+        if (step.parkings) {
+          parkingsHtml = `<div class="mt-3 flex flex-col gap-2">`;
+          step.parkings.forEach(park => {
+            const badge = park.type === '推薦' 
+              ? `<span class="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200">Top 1</span>` 
+              : `<span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200">備選</span>`;
+            
+            parkingsHtml += `
+              <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(park.query)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-3 bg-white border border-gray-200 p-2.5 rounded-md hover:bg-gray-50 transition-colors group cursor-pointer" style="text-decoration:none;">
+                <div class="min-w-[48px]">${badge}</div>
+                <div class="flex-1 flex items-center justify-between">
+                  <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700 flex items-center gap-2">
+                    <i data-lucide="circle-parking" class="w-4 h-4 text-blue-500 opacity-70 group-hover:opacity-100"></i>
+                    ${park.name}
+                  </span>
+                  <i data-lucide="external-link" class="w-4 h-4 text-gray-400 group-hover:text-blue-600"></i>
+                </div>
+              </a>
+            `;
+          });
+          parkingsHtml += `</div>`;
+        }
+
+        html += `
+          <div class="relative pl-8 md:pl-10">
+            <div class="absolute -left-[17px] top-1 flex items-center justify-center w-8 h-8 rounded-full border-4 border-gray-50 shadow-sm ${iconBg}">
+              <i data-lucide="${iconName}" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="bg-white md-shadow border-0 p-5 rounded-lg mb-6 hover:shadow-md transition-shadow">
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                <h3 class="text-lg font-medium ${titleColor}">${step.title}</h3>
+                <span class="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-md tracking-wide">${step.sequence}</span>
+              </div>
+              <p class="text-gray-600 leading-relaxed text-sm">${step.desc}</p>
+              ${parkingsHtml}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // --- 初始化 Leaflet 地圖 ---
+    function initMap() {
+      mapInstance = L.map('map-container', { zoomControl: false }).setView([23.4800, 120.4500], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 19
+      }).addTo(mapInstance);
+      L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+      
+      document.getElementById('external-map-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeMapQuery)}`;
+      
+      // 一次性建立所有標記
+      setupAllMarkers();
+      
+      // 根據初始狀態更新標記樣式
+      updateMapFeatures();
+      
+      // 初始視角：顯示所有標記
+      const group = L.featureGroup(allMarkersData.map(m => m.marker));
+      mapInstance.fitBounds(group.getBounds(), { padding: [50, 50] });
+      
+      setTimeout(() => {
+        if(markersDict[activeMapQuery]) {
+           markersDict[activeMapQuery].openPopup();
+        }
+      }, 800);
+    }
+
+    // --- 建立所有地圖標記 (僅執行一次) ---
+    function setupAllMarkers() {
+      locationsData.forEach(loc => {
+        // 1. 建立主要任務點標記
+        const mainPopupHtml = `
+          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #1f2937;">${loc.name}</div>
+          <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">主要任務點</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #ef4444; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            導航
+          </a>
+        `;
+        const mainMarker = L.marker(loc.coords).bindPopup(mainPopupHtml);
+        
+        // 點擊地圖上的圖標，連動左側選單
+        mainMarker.on('click', () => setActiveState(loc.id, loc.query, true));
+        
+        allMarkersData.push({ marker: mainMarker, type: 'main', locId: loc.id, query: loc.query });
+        mainMarker.addTo(mapInstance);
+        markersDict[loc.query] = mainMarker;
+
+        // 2. 建立所有停車場標記
+        loc.parkings.forEach((p) => {
+          const badgeHtml = p.type === '推薦' ? `<span style="background: #ffedd5; color: #c2410c; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 600; margin-left: 6px;">Top 1</span>` : '';
+          const popupHtml = `
+            <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px; color: #1f2937; display: flex; align-items: center;">${p.name} ${badgeHtml}</div>
+            <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">車位: ${p.space}</div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2563eb; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              導航
+            </a>
+          `;
+          const pMarker = L.marker(p.coords).bindPopup(popupHtml);
+          
+          // 點擊地圖上的圖標，連動左側選單
+          pMarker.on('click', () => setActiveState(loc.id, p.query, true));
+          
+          allMarkersData.push({ marker: pMarker, type: 'park', locId: loc.id, query: p.query });
+          pMarker.addTo(mapInstance);
+          markersDict[p.query] = pMarker;
+        });
+      });
+    }
+
+    // --- 動態更新圖標的樣式 (突出/正常/淡化) ---
+    function updateMapFeatures() {
+      if (!mapInstance) return;
+
+      const flagSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg>`;
+      const parkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 17V7h4a3 3 0 0 1 0 6H9"></path></svg>`;
+
+      allMarkersData.forEach(item => {
+        const isSelected = item.query === activeMapQuery; // 剛好被點中的那個點
+        const isSameZone = item.locId === activeLocId;    // 在同一個任務區域的其他點
+        
+        let size = 24;
+        let zIndex = 0;
+        let htmlStr = '';
+
+        if (item.type === 'main') {
+          if (isSelected) {
+            // 被選中的主點：巨大、發光
+            size = 40; zIndex = 2000;
+            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(239,68,68,0.2), 0 4px 6px rgba(0,0,0,0.3);">${flagSvg}</div>`;
+          } else if (isSameZone) {
+            // 同區的主點：正常大小
+            size = 32; zIndex = 1000;
+            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${flagSvg}</div>`;
+          } else {
+            // 其他區的主點：縮小、淡化
+            size = 24; zIndex = 500;
+            htmlStr = `<div class="marker-highlight" style="background-color: #fca5a5; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${flagSvg}</div>`;
+          }
+        } else {
+          if (isSelected) {
+            // 被選中的停車場：巨大、發藍光
+            size = 36; zIndex = 1500;
+            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(59,130,246,0.2), 0 4px 6px rgba(0,0,0,0.3);">${parkSvg}</div>`;
+          } else if (isSameZone) {
+            // 同區的停車場：正常大小
+            size = 28; zIndex = 800;
+            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${parkSvg}</div>`;
+          } else {
+            // 其他區的停車場：縮小、淡化
+            size = 20; zIndex = 400;
+            htmlStr = `<div class="marker-highlight" style="background-color: #93c5fd; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${parkSvg}</div>`;
+          }
+        }
+
+        const icon = L.divIcon({
+           html: htmlStr,
+           className: '',
+           iconSize: [size, size],
+           iconAnchor: [size / 2, size]
+        });
+
+        item.marker.setIcon(icon);
+        item.marker.setZIndexOffset(zIndex);
+      });
+    }
+
+    // --- 啟動函式 ---
+    document.addEventListener("DOMContentLoaded", () => {
+      renderLocations();
+      renderRoutes();
+      initMap();
+    });
+  </script>
+</body>
+</html>
