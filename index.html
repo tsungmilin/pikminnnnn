@@ -35,6 +35,14 @@
     .md-shadow-hover:hover {
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
+    /* 隱藏捲軸 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-gray-50 font-sans text-gray-800 pb-12">
@@ -51,13 +59,21 @@
   </header>
 
   <!-- Material Tabs -->
-  <div class="bg-white shadow-sm mb-6 sticky top-0 z-20">
-    <div class="max-w-5xl mx-auto px-4 flex">
-      <button onclick="switchTab('map')" id="btn-tab-map" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors">
+  <div class="bg-white shadow-sm mb-6 sticky top-0 z-20 overflow-x-auto no-scrollbar">
+    <div class="max-w-5xl mx-auto px-4 flex min-w-max">
+      <button onclick="switchTab('map')" id="btn-tab-map" class="whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors">
         <i data-lucide="map-pin" class="w-5 h-5"></i>
         地圖與停車資訊
       </button>
-      <button onclick="switchTab('route')" id="btn-tab-route" class="flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors">
+      <button onclick="switchTab('brunch')" id="btn-tab-brunch" class="whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors">
+        <i data-lucide="utensils" class="w-5 h-5"></i>
+        高分早午餐
+      </button>
+      <button onclick="switchTab('cafe')" id="btn-tab-cafe" class="whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors">
+        <i data-lucide="coffee" class="w-5 h-5"></i>
+        高分咖啡廳
+      </button>
+      <button onclick="switchTab('route')" id="btn-tab-route" class="whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors">
         <i data-lucide="navigation-2" class="w-5 h-5"></i>
         行程路線規劃
       </button>
@@ -106,7 +122,83 @@
       <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-8"></div>
     </div>
 
-    <!-- TAB 2: Route Planning -->
+    <!-- TAB 2: Brunch Spots -->
+    <div id="tab-brunch" class="space-y-6 fade-in hidden">
+      <!-- Interactive Brunch Map Container -->
+      <div class="bg-white rounded-lg md-shadow relative group overflow-hidden">
+        <div id="brunch-map-container" class="h-[450px] w-full bg-gray-100 relative z-0">
+          <!-- 早午餐地圖將由 Leaflet 自動載入至此 -->
+        </div>
+        
+        <!-- Map Legend -->
+        <div class="absolute bottom-6 left-6 z-[1000]">
+           <div class="bg-white px-3 py-2 rounded-md md-shadow flex gap-4 text-xs font-medium text-gray-700">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-orange-500"></span> 早午餐</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500 opacity-60"></span> 任務參照點</span>
+           </div>
+        </div>
+        
+        <!-- Extended FAB (Floating Action Button) -->
+        <div class="absolute bottom-6 right-6 z-[1000]">
+          <a id="external-brunch-link" href="#" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-3 rounded-full shadow-lg font-medium transition-transform transform hover:-translate-y-0.5 tracking-wide text-sm">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            開啟導航
+          </a>
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="pt-2 pb-1">
+        <h2 class="text-lg font-medium text-gray-800 flex items-center gap-2">
+          <i data-lucide="utensils" class="text-orange-600 w-5 h-5"></i>
+          高評價人氣早午餐推薦
+        </h2>
+        <p class="text-gray-500 mt-1 text-sm">為您嚴選嘉義市區評分 4.0 以上，且累積超過 400 則評論的優質店家。地圖上的紅旗為您的遊戲任務點，方便評估距離！</p>
+      </div>
+
+      <!-- Brunch Grid (Dynamically rendered by JS) -->
+      <div id="brunch-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-8"></div>
+    </div>
+
+    <!-- TAB 3: Cafe Spots -->
+    <div id="tab-cafe" class="space-y-6 fade-in hidden">
+      <!-- Interactive Cafe Map Container -->
+      <div class="bg-white rounded-lg md-shadow relative group overflow-hidden">
+        <div id="cafe-map-container" class="h-[450px] w-full bg-gray-100 relative z-0">
+          <!-- 咖啡廳地圖將由 Leaflet 自動載入至此 -->
+        </div>
+        
+        <!-- Map Legend -->
+        <div class="absolute bottom-6 left-6 z-[1000]">
+           <div class="bg-white px-3 py-2 rounded-md md-shadow flex gap-4 text-xs font-medium text-gray-700">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-600"></span> 咖啡廳</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500 opacity-60"></span> 任務參照點</span>
+           </div>
+        </div>
+        
+        <!-- Extended FAB (Floating Action Button) -->
+        <div class="absolute bottom-6 right-6 z-[1000]">
+          <a id="external-cafe-link" href="#" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-full shadow-lg font-medium transition-transform transform hover:-translate-y-0.5 tracking-wide text-sm">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            開啟導航
+          </a>
+        </div>
+      </div>
+
+      <!-- Info Section -->
+      <div class="pt-2 pb-1">
+        <h2 class="text-lg font-medium text-gray-800 flex items-center gap-2">
+          <i data-lucide="coffee" class="text-amber-600 w-5 h-5"></i>
+          必訪高人氣咖啡廳
+        </h2>
+        <p class="text-gray-500 mt-1 text-sm">統整嘉義市評分高達 4.0 以上，且評論數破 400 則的特色咖啡廳，讓您解任務途中隨時補充咖啡因！</p>
+      </div>
+
+      <!-- Cafe Grid (Dynamically rendered by JS) -->
+      <div id="cafe-grid" class="grid grid-cols-1 md:grid-cols-2 gap-5 pb-8"></div>
+    </div>
+
+    <!-- TAB 4: Route Planning -->
     <div id="tab-route" class="fade-in hidden pb-8">
       
       <div class="bg-white rounded-lg md-shadow p-6 md:p-8 mb-6">
@@ -198,6 +290,55 @@
       }
     ];
 
+    const brunchData = [
+      { id: 'B1', name: '土佐手作早午餐', rating: 4.7, reviews: 1879, desc: '極高的評價與破千評論，主打精緻的手作和風早午餐與手捏飯糰，吃膩美式的好選擇。', coords: [23.4680, 120.4540], query: '嘉義市東區吳鳳南路17巷1號' },
+      { id: 'B2', name: '桔吉力早午餐', rating: 4.5, reviews: 2023, desc: '嘉義超高人氣平價早午餐，法式拼盤與特色餐點CP值極高，在地老饕狂推，建議提早來。', coords: [23.4754, 120.4431], query: '嘉義市西區仁愛路344號 桔吉力' },
+      { id: 'B3', name: '小自由廚房', rating: 4.3, reviews: 1025, desc: '選擇多樣化的溫馨早午餐，從薄餅、義大利麵到豐盛拼盤應有盡有，環境寬敞。', coords: [23.4842, 120.4650], query: '嘉義市東區文雅街148號 小自由廚房' },
+      { id: 'B4', name: '暖肚皮咖啡', rating: 4.5, reviews: 795, desc: '木質調舒適空間，早午餐盤豐盛美味，唐揚雞與法式吐司是許多人的最愛。', coords: [23.4815, 120.4532], query: '嘉義市東區公明路386號 暖肚皮咖啡' },
+      { id: 'B5', name: '鼻孔先生手作早午餐', rating: 4.6, reviews: 980, desc: '大份量飽足感，酥脆粉漿蛋餅與特色手作料理非常受歡迎，在地人極力推薦。', coords: [23.4850, 120.4610], query: '嘉義市東區成仁街273號之1 鼻孔先生' },
+      { id: 'B6', name: '搞岡紅茶', rating: 4.1, reviews: 761, desc: '不僅紅茶好喝，丹麥吐司套餐與美式牛奶炒蛋更是招牌，清爽不油膩。', coords: [23.4785, 120.4415], query: '嘉義市西區光彩街520號 搞岡紅茶' },
+      { id: 'B7', name: 'Nonamelab', rating: 4.5, reviews: 1128, desc: '工業風設計感早午餐，餐點精緻且富有創意，適合拍照打卡與享受悠閒早晨。', coords: [23.4750, 120.4405], query: '嘉義市西區西門街127號 Nonamelab' },
+      { id: 'B8', name: '吐司男 嘉義民生店', rating: 4.6, reviews: 767, desc: '厚實飽滿的韓系厚吐司專賣，餡料豐富，是想要快速飽餐一頓的熱門選擇。', coords: [23.4788, 120.4450], query: '嘉義市西區民生北路230號 吐司男' },
+      { id: 'B9', name: '深呼吸早午餐廚房', rating: 4.4, reviews: 729, desc: '在地人的私藏愛店，脆皮蛋餅與藍莓吐司評價極高，拼盤色彩繽紛且健康。', coords: [23.4705, 120.4430], query: '嘉義市西區志昇街69號 深呼吸早午餐' },
+      { id: 'B10', name: '荏苒咖啡', rating: 4.6, reviews: 515, desc: '霜空咖啡姊妹店，老屋改建質感極佳，不僅咖啡厲害，連搭配的麵包都是自家手作。', coords: [23.4820, 120.4640], query: '嘉義市東區公園街97號 荏苒咖啡' },
+      { id: 'B11', name: '綠洲 Oasis Brunch', rating: 4.5, reviews: 600, desc: '由舊報社大樓改建的復古空間，提供超豐盛的西式早午餐盤，氣氛與食物都到位。', coords: [23.4770, 120.4510], query: '嘉義市東區蘭井街161號 綠洲' },
+      { id: 'B12', name: '早餐好樂 How The Breakfast', rating: 4.3, reviews: 477, desc: '高CP值的大份量特色早午餐，餐點具創意，假日人潮眾多。', coords: [23.4835, 120.4520], query: '嘉義市東區長榮街235號 早餐好樂' }
+    ];
+
+    // --- 新增：擴充的咖啡廳資料 (> 4.0星, > 400則評論) ---
+    const cafeData = [
+      { id: 'C1', name: '霜空咖啡', rating: 4.6, reviews: 1250, desc: '極具質感的日系老屋咖啡，甜點與茶飲水準極高，嘉義必訪網美愛店。', coords: [23.4795, 120.4455], query: '嘉義市西區國華街132號 霜空咖啡' },
+      { id: 'C2', name: '起風', rating: 4.6, reviews: 1540, desc: '隱身於巷弄內的超美庭院老屋，主打台灣茶葉與特色甜點，氣氛悠閒放鬆。', coords: [23.4720, 120.4580], query: '嘉義市東區興業新村40號 起風' },
+      { id: 'C3', name: '咖啡漫步 Come home', rating: 4.4, reviews: 980, desc: '溫馨迷人的老洋房咖啡館，戚風蛋糕與咖啡深受在地人喜愛，非常有氛圍。', coords: [23.4710, 120.4550], query: '嘉義市東區興業東路138號 咖啡漫步' },
+      { id: 'C4', name: '木更 Mugeneration', rating: 4.4, reviews: 890, desc: '極簡清水模設計風格，瑪德蓮與咖啡的絕佳搭配，空間感與設計感十足。', coords: [23.4830, 120.4560], query: '嘉義市東區成仁街189號 木更' },
+      { id: 'C5', name: '秘氏咖啡', rating: 4.6, reviews: 620, desc: '充滿昭和時代復古氛圍，手沖咖啡專業，環境靜謐有特色，非常適合安靜閱讀。', coords: [23.4760, 120.4490], query: '嘉義市西區延平街288號 秘氏咖啡' },
+      { id: 'C6', name: '玖咖啡', rating: 4.5, reviews: 540, desc: '自家烘焙咖啡豆，空間設計具現代感，手沖單品咖啡評價極佳，採光優秀。', coords: [23.4815, 120.4590], query: '嘉義市東區林森東路43號 玖咖啡' },
+      { id: 'C7', name: '往前咖啡店 Forward coffee', rating: 4.6, reviews: 530, desc: '隱藏在巷子裡的工業風小店，自家烘焙咖啡與各種手作甜點都十分出色。', coords: [23.4800, 120.4570], query: '嘉義市東區興中街203號 往前咖啡店' },
+      { id: 'C8', name: '國王蝴蝶秘密基地', rating: 4.7, reviews: 480, desc: '位於文創園區周邊，極具個性的獨立咖啡店，咖啡風味強烈而細緻。', coords: [23.4810, 120.4460], query: '嘉義市西區中山路616號K棟 國王蝴蝶' },
+      { id: 'C9', name: '融合度咖啡', rating: 4.6, reviews: 420, desc: '專注於精品咖啡的老字號店家，咖啡豆選擇多樣，老闆專業熱情，常有在地客。', coords: [23.4780, 120.4500], query: '嘉義市東區中山路223號 融合度咖啡' },
+      { id: 'C10', name: 'Morikoohii 森 咖啡', rating: 4.4, reviews: 1450, desc: '位於檜意森活村內的日式木造建築，提供手沖咖啡與日式煎餅，彷彿置身京都。', coords: [23.4855, 120.4535], query: '嘉義市東區共和路199巷1號 森咖啡' },
+      { id: 'C11', name: '老院子 1951', rating: 4.5, reviews: 820, desc: '充滿復古童趣的老宅咖啡廳，庭院綠意盎然，甜點與飲品都相當用心，非常好拍。', coords: [23.4820, 120.4565], query: '嘉義市東區成仁街201號 老院子1951' },
+      { id: 'C12', name: 'HERMIT & Co.', rating: 4.6, reviews: 680, desc: '由舊微活版印刷廠改建的日式木造老屋，結合歷史建築與精緻甜點，氛圍極其獨特。', coords: [23.4822, 120.4565], query: '嘉義市東區成仁街209號 HERMIT' },
+      { id: 'C13', name: '卓武咖啡', rating: 4.6, reviews: 750, desc: '嘉義知名的自家烘焙老店，主打阿里山在地莊園咖啡豆，手沖單品咖啡愛好者必訪。', coords: [23.4770, 120.4440], query: '嘉義市西區民生北路194號 卓武咖啡' },
+      { id: 'C14', name: '聖塔咖啡 Santa Coffee', rating: 4.6, reviews: 850, desc: '深耕嘉義多年的專業自家烘焙咖啡，平價且風味穩定，手工甜點也相當受歡迎。', coords: [23.4710, 120.4530], query: '嘉義市東區興業東路9號 聖塔咖啡' },
+      { id: 'C15', name: 'Daisy的雜貨店', rating: 4.5, reviews: 900, desc: '充滿日系雜貨風格與文青感的老屋，空間溫暖舒適，焦糖乳酪蘋果派是人氣必點。', coords: [23.4790, 120.4560], query: '嘉義市東區維新路73號 Daisy的雜貨店' },
+      { id: 'C16', name: 'Evie\'s Café 伊米咖啡', rating: 4.6, reviews: 520, desc: '隱身住宅區的實力派咖啡店，義式與手沖都有極高水準，還有好吃的司康與手作甜點。', coords: [23.4750, 120.4490], query: '嘉義市東區康樂街44號 伊米咖啡' },
+      { id: 'C17', name: '小口品s', rating: 4.7, reviews: 450, desc: '溫馨迷你的咖啡館，以精緻的手沖咖啡和友善的老闆聞名，是許多在地人的秘密基地。', coords: [23.4780, 120.4430], query: '嘉義市西區光彩街453號 小口品s' },
+      { id: 'C18', name: '美好咖啡店 Mihao Coffee', rating: 4.7, reviews: 430, desc: '位於棒球場、公園周邊，店面小巧精緻，咖啡香氣迷人，非常適合解完任務來外帶一杯。', coords: [23.4800, 120.4630], query: '嘉義市東區啟明路146號 美好咖啡店' },
+      { id: 'C19', name: '自由が丘 長榮街156', rating: 4.5, reviews: 610, desc: '由日式老木屋改建的甜點咖啡廳，戚風蛋糕與季節限定甜品極具水準，日式氛圍濃厚。', coords: [23.4830, 120.4540], query: '嘉義市東區長榮街156號 自由が丘' },
+      { id: 'C20', name: '巴倫司康 Baron Scones', rating: 4.5, reviews: 820, desc: '主打英式司康的名店，口味選擇多樣且外酥內軟，搭配店內優質咖啡是絕佳的下午茶。', coords: [23.4800, 120.4540], query: '嘉義市東區公明路297號 巴倫司康' },
+      { id: 'C21', name: 'AMON 咖啡所', rating: 4.8, reviews: 750, desc: '隱身市宅街的老屋咖啡，保留傳統日式建築之美，手沖咖啡與在地特色糕點(如綠豆糕)的絕妙搭配。', coords: [23.4811, 120.4578], query: '嘉義市東區市宅街22巷27號' },
+      { id: 'C22', name: '秘密客咖啡館 Mimico', rating: 4.4, reviews: 620, desc: '老房子改建的靜謐空間，提供自家烘焙咖啡，環境寬敞舒適，還有可愛的店貓相伴。', coords: [23.4755, 120.4532], query: '嘉義市東區興業東路156號' },
+      { id: 'C23', name: '岬島 Jia Dao', rating: 4.6, reviews: 480, desc: '韓系純白風格的質感咖啡館，不僅好拍，甜點與飲品的口味也相當有水準。', coords: [23.4815, 120.4530], query: '嘉義市東區公明路372-1號' },
+      { id: 'C24', name: 'Dadala Cafe', rating: 4.5, reviews: 580, desc: '結合日系文具與咖啡的特色小店，店內播放著輕柔音樂，戚風蛋糕與特調咖啡深受喜愛。', coords: [23.4760, 120.4485], query: '嘉義市東區延平街219號' },
+      { id: 'C25', name: '底厝 DiCho', rating: 4.6, reviews: 490, desc: '帶有復古台式風格的咖啡甜點店，空間小巧溫馨，千層蛋糕與特色飲品是招牌。', coords: [23.4860, 120.4550], query: '嘉義市東區忠孝路342號' },
+      { id: 'C26', name: '常常 手作甜點', rating: 4.7, reviews: 460, desc: '以精緻法式甜點聞名，搭配特選單品咖啡，甜點控絕對不能錯過的嘉義隱藏版名店。', coords: [23.4835, 120.4650], query: '嘉義市東區林森東路418號' },
+      { id: 'C27', name: 'Bless 淺山房', rating: 4.7, reviews: 450, desc: '充滿綠意的世外桃源，由老屋與自然植栽構成的舒心空間，手沖咖啡風味乾淨明亮。', coords: [23.4820, 120.4680], query: '嘉義市東區啟明路124號' },
+      { id: 'C28', name: '慢靈魂 Slow Soul', rating: 4.6, reviews: 430, desc: '結合咖啡與黑膠唱片的藝文空間，自家烘焙咖啡豆品質極佳，充滿懷舊與人文氣息。', coords: [23.4765, 120.4480], query: '嘉義市東區延平街211號' },
+      { id: 'C29', name: '好飲咖啡 Good In Cafe', rating: 4.5, reviews: 510, desc: '在地人日常光顧的平價優質咖啡館，咖啡拉花精緻，拿鐵醇厚，餐點也毫不馬虎。', coords: [23.4700, 120.4450], query: '嘉義市西區民生南路' },
+      { id: 'C30', name: 'Moku Sho 木商珈琲', rating: 4.6, reviews: 440, desc: '前身為六十年木柴行，保留歲月痕跡的質感空間，提供自家煎焙珈琲與美味的烈日鬆餅。', coords: [23.4785, 120.4560], query: '嘉義市東區蘭井街78號' }
+    ];
+
     const routeSteps = [
       {
         type: 'drive', title: '開車抵達 Zone 1', desc: '建議早上先至火車站周邊，避開午後人潮。導航至下方停車場：', sequence: '第 1 站',
@@ -230,38 +371,62 @@
     ];
 
     // --- 狀態管理 ---
+    // Tab 1: Map State
     let activeLocId = 'A';
     let activeMapQuery = locationsData[0].query;
-    
-    // 地圖變數
     let mapInstance = null;
-    let allMarkersData = []; // 儲存所有的 marker 參考以供動態更新
+    let allMarkersData = []; 
     let markersDict = {};
+
+    // Tab 2: Brunch Map State
+    let activeBrunchId = 'B1';
+    let activeBrunchQuery = brunchData[0].query;
+    let brunchMapInstance = null;
+    let allBrunchMarkersData = [];
+    let brunchMarkersDict = {};
+
+    // Tab 3: Cafe Map State
+    let activeCafeId = 'C1';
+    let activeCafeQuery = cafeData[0].query;
+    let cafeMapInstance = null;
+    let allCafeMarkersData = [];
+    let cafeMarkersDict = {};
 
     // --- 介面切換 (Tabs) ---
     function switchTab(tabId) {
       document.getElementById('tab-map').classList.toggle('hidden', tabId !== 'map');
       document.getElementById('tab-map').classList.toggle('block', tabId === 'map');
       
+      document.getElementById('tab-brunch').classList.toggle('hidden', tabId !== 'brunch');
+      document.getElementById('tab-brunch').classList.toggle('block', tabId === 'brunch');
+
+      document.getElementById('tab-cafe').classList.toggle('hidden', tabId !== 'cafe');
+      document.getElementById('tab-cafe').classList.toggle('block', tabId === 'cafe');
+
       document.getElementById('tab-route').classList.toggle('hidden', tabId !== 'route');
       document.getElementById('tab-route').classList.toggle('block', tabId === 'route');
 
-      const btnMap = document.getElementById('btn-tab-map');
-      const btnRoute = document.getElementById('btn-tab-route');
-      
-      if (tabId === 'map') {
-        btnMap.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors";
-        btnRoute.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors";
-        if (mapInstance) {
-          setTimeout(() => mapInstance.invalidateSize(), 100);
+      const tabs = ['map', 'brunch', 'cafe', 'route'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`btn-tab-${t}`);
+        if (t === tabId) {
+          btn.className = "whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors";
+        } else {
+          btn.className = "whitespace-nowrap flex-1 flex items-center justify-center gap-2 py-3 px-6 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors";
         }
-      } else {
-        btnMap.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:bg-gray-50 transition-colors";
-        btnRoute.className = "flex-1 flex items-center justify-center gap-2 py-3 px-4 font-medium text-teal-600 border-b-2 border-teal-600 transition-colors";
+      });
+
+      // 修正地圖渲染大小
+      if (tabId === 'map' && mapInstance) {
+        setTimeout(() => mapInstance.invalidateSize(), 100);
+      } else if (tabId === 'brunch' && brunchMapInstance) {
+        setTimeout(() => brunchMapInstance.invalidateSize(), 100);
+      } else if (tabId === 'cafe' && cafeMapInstance) {
+        setTimeout(() => cafeMapInstance.invalidateSize(), 100);
       }
     }
 
-    // --- 設定作用中的地點與停車場 ---
+    // --- TAB 1: 停車與地圖 ---
     function setActiveState(locId, query, fromMap = false) {
       if(window.event && !fromMap) window.event.stopPropagation();
       
@@ -273,7 +438,6 @@
       renderLocations();
       updateMapFeatures();
       
-      // 如果不是從地圖點擊觸發的，我們需要讓地圖自動飛過去並開啟 Popup
       if (!fromMap) {
         setTimeout(() => {
           const targetMarker = markersDict[activeMapQuery];
@@ -283,15 +447,11 @@
           }
         }, 100);
       } else {
-         // 從地圖點擊的，Leaflet 已經自己打開 Popup 了，我們只要稍微平移置中就好
          const targetMarker = markersDict[activeMapQuery];
-         if (targetMarker) {
-            mapInstance.panTo(targetMarker.getLatLng());
-         }
+         if (targetMarker) mapInstance.panTo(targetMarker.getLatLng());
       }
     }
 
-    // --- 渲染第一頁：停車地點清單 ---
     function renderLocations() {
       const container = document.getElementById('locations-grid');
       let html = '';
@@ -343,7 +503,362 @@
       lucide.createIcons();
     }
 
-    // --- 渲染第二頁：路線規劃 ---
+    function initMap() {
+      mapInstance = L.map('map-container', { zoomControl: false }).setView([23.4800, 120.4500], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO', maxZoom: 19
+      }).addTo(mapInstance);
+      L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+      document.getElementById('external-map-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeMapQuery)}`;
+      
+      setupAllMarkers();
+      updateMapFeatures();
+      
+      const group = L.featureGroup(allMarkersData.map(m => m.marker));
+      mapInstance.fitBounds(group.getBounds(), { padding: [50, 50] });
+      
+      setTimeout(() => { if(markersDict[activeMapQuery]) markersDict[activeMapQuery].openPopup(); }, 800);
+    }
+
+    function setupAllMarkers() {
+      locationsData.forEach(loc => {
+        // Main Task Location
+        const mainPopupHtml = `
+          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #1f2937;">${loc.name}</div>
+          <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">主要任務點</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #ef4444; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            導航
+          </a>
+        `;
+        const mainMarker = L.marker(loc.coords).bindPopup(mainPopupHtml);
+        mainMarker.on('click', () => setActiveState(loc.id, loc.query, true));
+        allMarkersData.push({ marker: mainMarker, type: 'main', locId: loc.id, query: loc.query });
+        mainMarker.addTo(mapInstance);
+        markersDict[loc.query] = mainMarker;
+
+        // Parkings
+        loc.parkings.forEach((p) => {
+          const badgeHtml = p.type === '推薦' ? `<span style="background: #ffedd5; color: #c2410c; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 600; margin-left: 6px;">Top 1</span>` : '';
+          const popupHtml = `
+            <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px; color: #1f2937; display: flex; align-items: center;">${p.name} ${badgeHtml}</div>
+            <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">車位: ${p.space}</div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2563eb; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              導航
+            </a>
+          `;
+          const pMarker = L.marker(p.coords).bindPopup(popupHtml);
+          pMarker.on('click', () => setActiveState(loc.id, p.query, true));
+          allMarkersData.push({ marker: pMarker, type: 'park', locId: loc.id, query: p.query });
+          pMarker.addTo(mapInstance);
+          markersDict[p.query] = pMarker;
+        });
+      });
+    }
+
+    function updateMapFeatures() {
+      if (!mapInstance) return;
+
+      const flagSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg>`;
+      const parkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 17V7h4a3 3 0 0 1 0 6H9"></path></svg>`;
+
+      allMarkersData.forEach(item => {
+        const isSelected = item.query === activeMapQuery;
+        const isSameZone = item.locId === activeLocId;
+        let size = 24, zIndex = 0, htmlStr = '';
+
+        if (item.type === 'main') {
+          if (isSelected) {
+            size = 40; zIndex = 2000;
+            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(239,68,68,0.2), 0 4px 6px rgba(0,0,0,0.3);">${flagSvg}</div>`;
+          } else if (isSameZone) {
+            size = 32; zIndex = 1000;
+            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${flagSvg}</div>`;
+          } else {
+            size = 24; zIndex = 500;
+            htmlStr = `<div class="marker-highlight" style="background-color: #fca5a5; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${flagSvg}</div>`;
+          }
+        } else {
+          if (isSelected) {
+            size = 36; zIndex = 1500;
+            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(59,130,246,0.2), 0 4px 6px rgba(0,0,0,0.3);">${parkSvg}</div>`;
+          } else if (isSameZone) {
+            size = 28; zIndex = 800;
+            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${parkSvg}</div>`;
+          } else {
+            size = 20; zIndex = 400;
+            htmlStr = `<div class="marker-highlight" style="background-color: #93c5fd; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${parkSvg}</div>`;
+          }
+        }
+
+        const icon = L.divIcon({ html: htmlStr, className: '', iconSize: [size, size], iconAnchor: [size / 2, size] });
+        item.marker.setIcon(icon);
+        item.marker.setZIndexOffset(zIndex);
+      });
+    }
+
+    // --- TAB 2: Brunch 地圖與清單 ---
+    function setActiveBrunch(id, query, fromMap = false) {
+      if(window.event && !fromMap) window.event.stopPropagation();
+      
+      activeBrunchId = id;
+      activeBrunchQuery = query;
+      document.getElementById('external-brunch-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeBrunchQuery)}`;
+      
+      renderBrunchList();
+      updateBrunchMapFeatures();
+      
+      if (!fromMap) {
+        setTimeout(() => {
+          const targetMarker = brunchMarkersDict[activeBrunchQuery];
+          if (targetMarker) {
+            targetMarker.openPopup();
+            brunchMapInstance.setView(targetMarker.getLatLng(), 16, { animate: true });
+          }
+        }, 100);
+      } else {
+         const targetMarker = brunchMarkersDict[activeBrunchQuery];
+         if (targetMarker) brunchMapInstance.panTo(targetMarker.getLatLng());
+      }
+    }
+
+    function renderBrunchList() {
+      const container = document.getElementById('brunch-grid');
+      let html = '';
+
+      brunchData.forEach(b => {
+        const isActive = activeBrunchId === b.id;
+        
+        html += `
+          <div onclick="setActiveBrunch('${b.id}', '${b.query}')" class="bg-white rounded-lg transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between ${isActive ? 'shadow-md border border-orange-500' : 'shadow-sm border border-gray-200 hover:shadow-md'}">
+            <div class="p-5 flex-1 transition-colors ${isActive ? 'bg-orange-50/50' : 'hover:bg-gray-50'}">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="text-lg font-medium flex items-center gap-2 ${isActive ? 'text-orange-700' : 'text-gray-800'}">
+                  <i data-lucide="utensils" class="w-5 h-5 shrink-0 ${isActive ? 'text-orange-600' : 'text-gray-400'}"></i>
+                  ${b.name}
+                </h3>
+                <div class="flex items-center gap-1 bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-md font-bold text-sm border border-orange-200">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-orange-500 text-orange-500"></i> ${b.rating}
+                </div>
+              </div>
+              <div class="text-xs font-medium text-gray-500 mb-3 ml-7">累積 ${b.reviews}+ 則 Google 評論</div>
+              <p class="text-sm text-gray-600 leading-relaxed ml-7">${b.desc}</p>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function initBrunchMap() {
+      brunchMapInstance = L.map('brunch-map-container', { zoomControl: false }).setView([23.4800, 120.4500], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO', maxZoom: 19
+      }).addTo(brunchMapInstance);
+      L.control.zoom({ position: 'bottomright' }).addTo(brunchMapInstance);
+      document.getElementById('external-brunch-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeBrunchQuery)}`;
+      
+      setupBrunchMarkers();
+      updateBrunchMapFeatures();
+      
+      const group = L.featureGroup(allBrunchMarkersData.map(m => m.marker));
+      brunchMapInstance.fitBounds(group.getBounds(), { padding: [50, 50] });
+    }
+
+    function setupBrunchMarkers() {
+      // 1. 添加半透明的主要遊戲景點 (作為地理參考)
+      const flagSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg>`;
+      const refIcon = L.divIcon({
+         html: `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.6; border: 1.5px solid white;">${flagSvg}</div>`,
+         className: '', iconSize: [20, 20], iconAnchor: [10, 20]
+      });
+      locationsData.forEach(loc => {
+        const popupHtml = `<div style="font-weight: 500; font-size: 13px; color: #1f2937;">任務點：${loc.name}</div>`;
+        const m = L.marker(loc.coords, { icon: refIcon, zIndexOffset: 300 }).bindPopup(popupHtml); 
+        m.addTo(brunchMapInstance);
+        allBrunchMarkersData.push({ marker: m, type: 'ref' });
+      });
+
+      // 2. 添加早午餐標記
+      brunchData.forEach(b => {
+        const popupHtml = `
+          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #1f2937; display: flex; align-items: center;">${b.name}</div>
+          <div style="color: #f59e0b; font-size: 12px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            ${b.rating} (${b.reviews}+ 則評論)
+          </div>
+          <div style="color: #6b7280; font-size: 11px; margin-bottom: 12px;">${b.desc}</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #ea580c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            導航
+          </a>
+        `;
+        const bMarker = L.marker(b.coords).bindPopup(popupHtml);
+        bMarker.on('click', () => setActiveBrunch(b.id, b.query, true));
+        allBrunchMarkersData.push({ marker: bMarker, type: 'brunch', id: b.id, query: b.query });
+        bMarker.addTo(brunchMapInstance);
+        brunchMarkersDict[b.query] = bMarker;
+      });
+    }
+
+    function updateBrunchMapFeatures() {
+      if (!brunchMapInstance) return;
+
+      const foodSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>`;
+
+      allBrunchMarkersData.forEach(item => {
+        if (item.type !== 'brunch') return; // 不更動參考用的遊戲點
+
+        const isSelected = item.query === activeBrunchQuery;
+        let size = 24, zIndex = 0, htmlStr = '';
+
+        if (isSelected) {
+          size = 40; zIndex = 2000;
+          htmlStr = `<div class="marker-highlight" style="background-color: #f97316; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(249,115,22,0.2), 0 4px 6px rgba(0,0,0,0.3);">${foodSvg}</div>`;
+        } else {
+          size = 28; zIndex = 800;
+          htmlStr = `<div class="marker-highlight" style="background-color: #f97316; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${foodSvg}</div>`;
+        }
+
+        const icon = L.divIcon({ html: htmlStr, className: '', iconSize: [size, size], iconAnchor: [size / 2, size] });
+        item.marker.setIcon(icon);
+        item.marker.setZIndexOffset(zIndex);
+      });
+    }
+
+    // --- TAB 3: Cafe 地圖與清單 ---
+    function setActiveCafe(id, query, fromMap = false) {
+      if(window.event && !fromMap) window.event.stopPropagation();
+      
+      activeCafeId = id;
+      activeCafeQuery = query;
+      document.getElementById('external-cafe-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeCafeQuery)}`;
+      
+      renderCafeList();
+      updateCafeMapFeatures();
+      
+      if (!fromMap) {
+        setTimeout(() => {
+          const targetMarker = cafeMarkersDict[activeCafeQuery];
+          if (targetMarker) {
+            targetMarker.openPopup();
+            cafeMapInstance.setView(targetMarker.getLatLng(), 16, { animate: true });
+          }
+        }, 100);
+      } else {
+         const targetMarker = cafeMarkersDict[activeCafeQuery];
+         if (targetMarker) cafeMapInstance.panTo(targetMarker.getLatLng());
+      }
+    }
+
+    function renderCafeList() {
+      const container = document.getElementById('cafe-grid');
+      let html = '';
+
+      cafeData.forEach(c => {
+        const isActive = activeCafeId === c.id;
+        
+        html += `
+          <div onclick="setActiveCafe('${c.id}', '${c.query}')" class="bg-white rounded-lg transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between ${isActive ? 'shadow-md border border-amber-500' : 'shadow-sm border border-gray-200 hover:shadow-md'}">
+            <div class="p-5 flex-1 transition-colors ${isActive ? 'bg-amber-50/50' : 'hover:bg-gray-50'}">
+              <div class="flex items-start justify-between mb-2">
+                <h3 class="text-lg font-medium flex items-center gap-2 ${isActive ? 'text-amber-700' : 'text-gray-800'}">
+                  <i data-lucide="coffee" class="w-5 h-5 shrink-0 ${isActive ? 'text-amber-600' : 'text-gray-400'}"></i>
+                  ${c.name}
+                </h3>
+                <div class="flex items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-md font-bold text-sm border border-amber-200">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-500 text-amber-500"></i> ${c.rating}
+                </div>
+              </div>
+              <div class="text-xs font-medium text-gray-500 mb-3 ml-7">累積 ${c.reviews}+ 則 Google 評論</div>
+              <p class="text-sm text-gray-600 leading-relaxed ml-7">${c.desc}</p>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function initCafeMap() {
+      cafeMapInstance = L.map('cafe-map-container', { zoomControl: false }).setView([23.4800, 120.4500], 14);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO', maxZoom: 19
+      }).addTo(cafeMapInstance);
+      L.control.zoom({ position: 'bottomright' }).addTo(cafeMapInstance);
+      document.getElementById('external-cafe-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeCafeQuery)}`;
+      
+      setupCafeMarkers();
+      updateCafeMapFeatures();
+      
+      const group = L.featureGroup(allCafeMarkersData.map(m => m.marker));
+      cafeMapInstance.fitBounds(group.getBounds(), { padding: [50, 50] });
+    }
+
+    function setupCafeMarkers() {
+      // 1. 添加半透明的主要遊戲景點 (作為地理參考)
+      const flagSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg>`;
+      const refIcon = L.divIcon({
+         html: `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.6; border: 1.5px solid white;">${flagSvg}</div>`,
+         className: '', iconSize: [20, 20], iconAnchor: [10, 20]
+      });
+      locationsData.forEach(loc => {
+        const popupHtml = `<div style="font-weight: 500; font-size: 13px; color: #1f2937;">任務點：${loc.name}</div>`;
+        const m = L.marker(loc.coords, { icon: refIcon, zIndexOffset: 300 }).bindPopup(popupHtml); 
+        m.addTo(cafeMapInstance);
+        allCafeMarkersData.push({ marker: m, type: 'ref' });
+      });
+
+      // 2. 添加咖啡廳標記
+      cafeData.forEach(c => {
+        const popupHtml = `
+          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #1f2937; display: flex; align-items: center;">${c.name}</div>
+          <div style="color: #d97706; font-size: 12px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            ${c.rating} (${c.reviews}+ 則評論)
+          </div>
+          <div style="color: #6b7280; font-size: 11px; margin-bottom: 12px;">${c.desc}</div>
+          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #d97706; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            導航
+          </a>
+        `;
+        const cMarker = L.marker(c.coords).bindPopup(popupHtml);
+        cMarker.on('click', () => setActiveCafe(c.id, c.query, true));
+        allCafeMarkersData.push({ marker: cMarker, type: 'cafe', id: c.id, query: c.query });
+        cMarker.addTo(cafeMapInstance);
+        cafeMarkersDict[c.query] = cMarker;
+      });
+    }
+
+    function updateCafeMapFeatures() {
+      if (!cafeMapInstance) return;
+
+      const coffeeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>`;
+
+      allCafeMarkersData.forEach(item => {
+        if (item.type !== 'cafe') return; // 不更動參考用的遊戲點
+
+        const isSelected = item.query === activeCafeQuery;
+        let size = 24, zIndex = 0, htmlStr = '';
+
+        if (isSelected) {
+          size = 40; zIndex = 2000;
+          htmlStr = `<div class="marker-highlight" style="background-color: #d97706; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(217,119,6,0.2), 0 4px 6px rgba(0,0,0,0.3);">${coffeeSvg}</div>`;
+        } else {
+          size = 28; zIndex = 800;
+          htmlStr = `<div class="marker-highlight" style="background-color: #d97706; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${coffeeSvg}</div>`;
+        }
+
+        const icon = L.divIcon({ html: htmlStr, className: '', iconSize: [size, size], iconAnchor: [size / 2, size] });
+        item.marker.setIcon(icon);
+        item.marker.setZIndexOffset(zIndex);
+      });
+    }
+
+    // --- TAB 4: 渲染路線規劃 ---
     function renderRoutes() {
       const container = document.getElementById('route-grid');
       let html = '';
@@ -397,140 +912,15 @@
       lucide.createIcons();
     }
 
-    // --- 初始化 Leaflet 地圖 ---
-    function initMap() {
-      mapInstance = L.map('map-container', { zoomControl: false }).setView([23.4800, 120.4500], 14);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-        maxZoom: 19
-      }).addTo(mapInstance);
-      L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
-      
-      document.getElementById('external-map-link').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeMapQuery)}`;
-      
-      // 一次性建立所有標記
-      setupAllMarkers();
-      
-      // 根據初始狀態更新標記樣式
-      updateMapFeatures();
-      
-      // 初始視角：顯示所有標記
-      const group = L.featureGroup(allMarkersData.map(m => m.marker));
-      mapInstance.fitBounds(group.getBounds(), { padding: [50, 50] });
-      
-      setTimeout(() => {
-        if(markersDict[activeMapQuery]) {
-           markersDict[activeMapQuery].openPopup();
-        }
-      }, 800);
-    }
-
-    // --- 建立所有地圖標記 (僅執行一次) ---
-    function setupAllMarkers() {
-      locationsData.forEach(loc => {
-        // 1. 建立主要任務點標記
-        const mainPopupHtml = `
-          <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #1f2937;">${loc.name}</div>
-          <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">主要任務點</div>
-          <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #ef4444; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            導航
-          </a>
-        `;
-        const mainMarker = L.marker(loc.coords).bindPopup(mainPopupHtml);
-        
-        // 點擊地圖上的圖標，連動左側選單
-        mainMarker.on('click', () => setActiveState(loc.id, loc.query, true));
-        
-        allMarkersData.push({ marker: mainMarker, type: 'main', locId: loc.id, query: loc.query });
-        mainMarker.addTo(mapInstance);
-        markersDict[loc.query] = mainMarker;
-
-        // 2. 建立所有停車場標記
-        loc.parkings.forEach((p) => {
-          const badgeHtml = p.type === '推薦' ? `<span style="background: #ffedd5; color: #c2410c; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: 600; margin-left: 6px;">Top 1</span>` : '';
-          const popupHtml = `
-            <div style="font-weight: 500; font-size: 13px; margin-bottom: 4px; color: #1f2937; display: flex; align-items: center;">${p.name} ${badgeHtml}</div>
-            <div style="color: #6b7280; font-size: 12px; margin-bottom: 12px;">車位: ${p.space}</div>
-            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.query)}" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 6px; background: #2563eb; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              導航
-            </a>
-          `;
-          const pMarker = L.marker(p.coords).bindPopup(popupHtml);
-          
-          // 點擊地圖上的圖標，連動左側選單
-          pMarker.on('click', () => setActiveState(loc.id, p.query, true));
-          
-          allMarkersData.push({ marker: pMarker, type: 'park', locId: loc.id, query: p.query });
-          pMarker.addTo(mapInstance);
-          markersDict[p.query] = pMarker;
-        });
-      });
-    }
-
-    // --- 動態更新圖標的樣式 (突出/正常/淡化) ---
-    function updateMapFeatures() {
-      if (!mapInstance) return;
-
-      const flagSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" x2="4" y1="22" y2="15"></line></svg>`;
-      const parkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9 17V7h4a3 3 0 0 1 0 6H9"></path></svg>`;
-
-      allMarkersData.forEach(item => {
-        const isSelected = item.query === activeMapQuery; // 剛好被點中的那個點
-        const isSameZone = item.locId === activeLocId;    // 在同一個任務區域的其他點
-        
-        let size = 24;
-        let zIndex = 0;
-        let htmlStr = '';
-
-        if (item.type === 'main') {
-          if (isSelected) {
-            // 被選中的主點：巨大、發光
-            size = 40; zIndex = 2000;
-            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(239,68,68,0.2), 0 4px 6px rgba(0,0,0,0.3);">${flagSvg}</div>`;
-          } else if (isSameZone) {
-            // 同區的主點：正常大小
-            size = 32; zIndex = 1000;
-            htmlStr = `<div class="marker-highlight" style="background-color: #ef4444; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${flagSvg}</div>`;
-          } else {
-            // 其他區的主點：縮小、淡化
-            size = 24; zIndex = 500;
-            htmlStr = `<div class="marker-highlight" style="background-color: #fca5a5; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${flagSvg}</div>`;
-          }
-        } else {
-          if (isSelected) {
-            // 被選中的停車場：巨大、發藍光
-            size = 36; zIndex = 1500;
-            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 4px rgba(59,130,246,0.2), 0 4px 6px rgba(0,0,0,0.3);">${parkSvg}</div>`;
-          } else if (isSameZone) {
-            // 同區的停車場：正常大小
-            size = 28; zIndex = 800;
-            htmlStr = `<div class="marker-highlight" style="background-color: #3b82f6; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); opacity: 1;">${parkSvg}</div>`;
-          } else {
-            // 其他區的停車場：縮小、淡化
-            size = 20; zIndex = 400;
-            htmlStr = `<div class="marker-highlight" style="background-color: #93c5fd; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7;">${parkSvg}</div>`;
-          }
-        }
-
-        const icon = L.divIcon({
-           html: htmlStr,
-           className: '',
-           iconSize: [size, size],
-           iconAnchor: [size / 2, size]
-        });
-
-        item.marker.setIcon(icon);
-        item.marker.setZIndexOffset(zIndex);
-      });
-    }
-
     // --- 啟動函式 ---
     document.addEventListener("DOMContentLoaded", () => {
       renderLocations();
+      renderBrunchList();
+      renderCafeList();
       renderRoutes();
       initMap();
+      initBrunchMap();
+      initCafeMap();
     });
   </script>
 </body>
